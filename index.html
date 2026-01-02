@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Potential Growth Calculator</title>
+
+<style>
+:root {
+  --bg: #020617;
+  --primary: #3b82f6;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 440px;
+  background: #020617;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4);
+}
+
+h1 {
+  font-size: 20px;
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.progress {
+  height: 6px;
+  background: #020617;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  transition: .3s;
+}
+
+.slide {
+  display: none;
+}
+
+.slide.active {
+  display: block;
+}
+
+.step {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.desc {
+  font-size: 14px;
+  color: #cbd5f5;
+  margin-bottom: 16px;
+}
+
+input[type=range] {
+  width: 100%;
+}
+
+.score {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 16px;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #020617;
+  color: var(--muted);
+}
+
+.result {
+  text-align: center;
+}
+
+.percent {
+  font-size: 48px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.interpretation {
+  font-size: 14px;
+  color: var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>Potential Growth Calculator</h1>
+  <div class="subtitle">estimasi peluang berkembang seseorang</div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progress"></div>
+  </div>
+
+  <div id="slides"></div>
+
+  <div class="nav">
+    <button id="prev">prev</button>
+    <button id="next">next</button>
+  </div>
+</div>
+
+<script>
+const indicators = [
+  ["Self-Awareness", "sadar kekuatan, kelemahan, dan pola diri sendiri"],
+  ["Learning Velocity", "cepat belajar dari kesalahan dan pengalaman"],
+  ["Accountability", "berani ngaku salah dan tanggung jawab"],
+  ["Emotional Regulation", "emosi stabil saat tertekan atau konflik"],
+  ["Action Bias", "lebih sering bertindak daripada kebanyakan mikir"],
+  ["Consistency", "mampu jalan stabil, bukan cuma semangat di awal"],
+  ["Environment Quality", "lingkungan mendukung atau menghambat growth"],
+  ["Humility to Learn", "mau belajar tanpa ego tersinggung"],
+  ["Direction Clarity", "hidup punya arah dan tujuan yang cukup jelas"]
+];
+
+const slidesEl = document.getElementById("slides");
+const progressEl = document.getElementById("progress");
+
+let index = 0;
+let scores = Array(indicators.length).fill(5);
+
+// generate slides
+indicators.forEach((item, i) => {
+  const div = document.createElement("div");
+  div.className = "slide";
+  div.innerHTML = `
+    <div class="step">indikator ${i+1} dari ${indicators.length}</div>
+    <div class="title">${item[0]}</div>
+    <div class="desc">${item[1]}</div>
+    <input type="range" min="0" max="10" value="5" data-i="${i}">
+    <div class="score">skor: <b id="s-${i}">5</b></div>
+  `;
+  slidesEl.appendChild(div);
+});
+
+const slides = document.querySelectorAll(".slide");
+slides[0].classList.add("active");
+
+document.querySelectorAll("input").forEach(slider => {
+  slider.oninput = e => {
+    const i = e.target.dataset.i;
+    scores[i] = +e.target.value;
+    document.getElementById(`s-${i}`).innerText = e.target.value;
+  };
+});
+
+const prev = document.getElementById("prev");
+const next = document.getElementById("next");
+
+function updateUI() {
+  progressEl.style.width = (index / indicators.length) * 100 + "%";
+  prev.disabled = index === 0;
+  next.innerText = index === indicators.length - 1 ? "lihat hasil" : "next";
+}
+
+updateUI();
+
+prev.onclick = () => {
+  slides[index].classList.remove("active");
+  index--;
+  slides[index].classList.add("active");
+  updateUI();
+};
+
+next.onclick = () => {
+  if (index === indicators.length - 1) return showResult();
+  slides[index].classList.remove("active");
+  index++;
+  slides[index].classList.add("active");
+  updateUI();
+};
+
+function showResult() {
+  const total = scores.reduce((a,b)=>a+b,0);
+  const max = indicators.length * 10;
+  const percent = Math.round((total/max)*100);
+
+  let text =
+    percent >= 80 ? "probabilitas growth sangat tinggi, tinggal dijaga" :
+    percent >= 60 ? "potensi berkembang kuat tapi masih ada kebocoran" :
+    percent >= 40 ? "potensi ada tapi rawan stagnan" :
+    "masalah growth bersifat sistemik, bukan sekadar motivasi";
+
+  slidesEl.innerHTML = `
+    <div class="result">
+      <h2>hasil evaluasi</h2>
+      <div>${total} / ${max}</div>
+      <div class="percent">${percent}%</div>
+      <div class="interpretation">${text}</div>
+    </div>
+  `;
+
+  document.querySelector(".nav").style.display = "none";
+  progressEl.style.width = "100%";
+}
+</script>
+
+</body>
+</html>
